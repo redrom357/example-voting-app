@@ -3,6 +3,7 @@ from flask import url_for
 import unittest
 
 
+
 class VoteUnitTest(unittest.TestCase):
 
     def setUp(self):
