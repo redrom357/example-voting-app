@@ -38,7 +38,6 @@ pipeline {
             	}
         }
         
-    	}
 
         stage('docker-package'){
 		agent any
@@ -56,6 +55,7 @@ pipeline {
 		  		}
 			}
             	}	
+        }    
         }    
     post{
     always{
