@@ -1,45 +1,72 @@
 pipeline {
     
-    agent{
-	docker{
-		image 'node:8.16.0-alpine'
-	}
-    }
+    agent none
 
     stages{
         stage('build'){
-            when{
-            changeset "**/result/**"
-	    }		
-            steps{
-		echo 'Compiling result app'
-		dir('result'){
-                sh 'npm install'
-		}
-            }
+		agent{
+        		docker{
+                		image 'node:8.16.0-alpine'
+        		}
+    		}
+            	when{
+            		changeset "**/result/**"
+	    	}		
+            	steps{
+			echo 'Compiling result app'
+			dir('result'){
+                	sh 'npm install'
+			}
+            	}
         }
-        stage('test'){
-            when{
-            changeset "**/result/**"
-            }
-            steps{
-                echo 'Running Unit Tests on result app'
-		dir('result'){
-		sh 'npm install'
-		sh 'npm test'
-		}
-            }
+        
+	stage('test'){
+		agent{
+        		docker{
+                		image 'node:8.16.0-alpine'
+        		}
+    		}	
+            	when{
+            		changeset "**/result/**"
+            	}
+            	steps{
+                	echo 'Running Unit Tests on result app'
+			dir('result'){
+			sh 'npm install'
+			sh 'npm test'
+			}
+            	}
         }
-    }
+        
+    	}
+
+        stage('docker-package'){
+		agent any
+        	when{
+                	changeset "**/result/**"
+			branch 'master'
+            	}
+            	steps{
+                	echo 'Packaging result app with docker'
+	        	script{
+		  		docker.withRegistry('https://registry.hub.docker.com', 'dockerlogin'){
+		    		def resultImage = docker.build("romsd/result:v${env.BUILD_ID}", "result")
+	            		resultImage.push()
+	            		resultImage.push("${env.BRANCH_NAME}")
+		  		}
+			}
+            	}	
+        }
+}    
     post{
     always{
         echo 'Pipeline for result is completed'
     }
     failure{
-        slackSend (channel: "jenkins", message: "Build Failed - ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+	slackSend (channel: "jenkins", message: "Build Failed - ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
     }
     success{
-        slackSend (channel: "jenkins", message: "Build Succeeded - ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+	slackSend (channel: "jenkins", message: "Build Succeeded - ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
     }
 }
-}    
+}
