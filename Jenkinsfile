@@ -209,7 +209,7 @@ pipeline {
       }
 
       environment{
-        sonarpath = tool 'SonarScanner'
+        sonarpath = tool 'Sonar Scanner'
       }
 
       steps {
